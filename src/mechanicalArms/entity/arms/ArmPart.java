@@ -78,7 +78,11 @@ public class ArmPart implements Cloneable{
         Draw.reset();
     }
 
-    public void update(){
+    /**
+     * @param x previous part joint x
+     * @param y previous part joint y
+     */
+    public void update(float x, float y){
         if(rotating){
             rotation = Angles.moveToward(rotation, rotateTo, Time.delta * rotateSpeed);
             rotating = !Mathf.equal(rotation, rotateTo);

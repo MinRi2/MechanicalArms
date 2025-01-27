@@ -90,8 +90,10 @@ public class ArmsController{
 
         updateCommand();
 
+        Vec2 jointPos = v1.set(x, y);
         for(ArmPart arm : arms){
-            arm.update();
+            arm.update(jointPos.x, jointPos.y);
+            jointPos.add(arm.getJointPoint());
         }
     }
 

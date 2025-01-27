@@ -17,11 +17,11 @@ public class ArmsBlocks{
         picker = new MechanicalArmsBlock("picker"){{
             arms.addAll(
             new ArmPart(){{
-                rotateSpeed = 160f / 60;
+                rotateSpeed = 210f / 60;
             }},
             new ArmPicker(){{
                 rotation = 30;
-                rotateSpeed = 130f / 60;
+                rotateSpeed = 190f / 60;
             }}
             );
 
