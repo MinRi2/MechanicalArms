@@ -1,5 +1,6 @@
 package mechanicalArms.logic;
 
+import arc.struct.*;
 import arc.util.*;
 import mechanicalArms.entity.arms.*;
 import mechanicalArms.entity.arms.ArmsCommand.*;
@@ -16,9 +17,9 @@ import mindustry.type.*;
 public class ArmsLInstructions{
 
     public static abstract class ArmsLAsyncInstruction implements LInstruction{
+
         protected ArmsCommand command;
         public LVar finishedOut;
-
         public ArmsLAsyncInstruction(LVar finishedOut){
             this.finishedOut = finishedOut;
         }
@@ -45,6 +46,7 @@ public class ArmsLInstructions{
         }
 
         public abstract void runLogicAsync(LExecutor exec);
+
     }
 
     public static class PickupInstruction implements LInstruction{
@@ -90,7 +92,7 @@ public class ArmsLInstructions{
         public LVar picker;
         public LVar x, y;
 
-        public RotateInstruction(LVar finishedOut, LVar picker, LVar x, LVar y){
+        public RotateInstruction(LVar picker, LVar x, LVar y, LVar finishedOut){
             super(finishedOut);
 
             this.picker = picker;

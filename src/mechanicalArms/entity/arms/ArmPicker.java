@@ -51,7 +51,7 @@ public class ArmPicker extends ArmPart{
 
         Building build = Vars.world.buildWorld(wx, wy);
 
-        if(build == null || !build.items.has(item)) return;
+        if(build == null || !build.block.hasItems || !build.items.has(item)) return;
 
         int spareAmount = itemCapacity - itemStack.amount;
         int amount = Math.min(build.items.get(item), spareAmount);

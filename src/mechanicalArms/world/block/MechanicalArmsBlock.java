@@ -5,7 +5,6 @@ import arc.struct.*;
 import arc.util.*;
 import mechanicalArms.entity.arms.*;
 import mechanicalArms.entity.arms.ArmsCommand.*;
-import mechanicalArms.logic.*;
 import mindustry.content.*;
 import mindustry.ctype.*;
 import mindustry.gen.*;
@@ -15,8 +14,6 @@ import mindustry.type.*;
 import mindustry.world.*;
 import mindustry.world.blocks.*;
 import mindustry.world.blocks.payloads.*;
-
-import java.util.*;
 
 /**
  * @author minri2
