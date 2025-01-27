@@ -98,7 +98,7 @@ public class ArmsLStatements{
             table.table(top -> {
                 top.setColor(category().color);
 
-                fields(top, "Picker", picker, string -> picker = string).width(88f / Scl.scl());;
+                fields(top, "Picker", picker, string -> picker = string).width(88f / Scl.scl());
 
                 top.add("do");
 
