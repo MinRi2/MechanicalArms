@@ -35,6 +35,8 @@ public class ArmsLInstructions{
                 return;
             }
 
+            finishedOut.setbool(false);
+
             runLogicAsync(exec);
 
             if(command == null){
