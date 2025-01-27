@@ -61,7 +61,7 @@ public class ArmsLInstructions{
         @Override
         public void run(LExecutor exec){
             if(command != null){
-                if(!command.finished()) return;
+                if(!command.released) return;
                 command = null;
             }
 
@@ -119,7 +119,7 @@ public class ArmsLInstructions{
         @Override
         public void run(LExecutor exec){
             if(command != null){
-                if(!command.finished()) return;
+                if(!command.released) return;
                 command = null;
             }
 
