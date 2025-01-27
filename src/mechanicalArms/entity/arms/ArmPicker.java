@@ -13,8 +13,6 @@ import mindustry.graphics.*;
 import mindustry.type.*;
 import mindustry.ui.*;
 import mindustry.world.blocks.payloads.*;
-import mindustry.world.blocks.production.*;
-import mindustry.world.blocks.production.GenericCrafter.*;
 
 /**
  * @author minri2
@@ -41,32 +39,20 @@ public class ArmPicker extends ArmPart{
         this.itemCapacity = itemCapacity;
     }
 
-    public void pickupItem(float wx, float wy, @Nullable Item item){
-        if(itemStack.amount != 0) return;
+    public void pickupItem(float wx, float wy, Item item){
+        if(item != itemStack.item && itemStack.amount != 0) return;
 
         Building build = Vars.world.buildWorld(wx, wy);
 
-        if(build instanceof GenericCrafterBuild crafter){
-            GenericCrafter crafterBlock = (GenericCrafter)crafter.block;
+        if(build == null || !build.items.has(item)) return;
 
-            if(!crafterBlock.outputsItems()) return;
+        int spareAmount = itemCapacity - itemStack.amount;
+        int amount = Math.min(build.items.get(item), spareAmount);
 
-            ItemStack[] outputItems = crafterBlock.outputItems;
+        build.items.remove(item, amount);
+        itemStack.set(item, itemStack.amount + amount);
 
-            if(item == null){
-                ItemStack stack = Structs.find(outputItems, s -> crafter.items.has(s.item));
-                if(stack == null) return;
-
-                item = stack.item;
-            }
-
-            int amount = Math.min(crafter.items.get(item), itemCapacity);
-
-            crafter.items.remove(item, amount);
-            this.itemStack.set(item, amount);
-
-            Fx.itemTransfer.at(wx, wy, amount, item.color, entity);
-        }
+        Fx.itemTransfer.at(wx, wy, amount, item.color, entity);
     }
 
     public void pickupBuild(float x, float y){
@@ -91,7 +77,7 @@ public class ArmPicker extends ArmPart{
             if(acceptAmount == 0) return;
 
             build.handleStack(item, acceptAmount, entity);
-            this.itemStack.set(item, itemStack.amount - acceptAmount);
+            itemStack.set(item, itemStack.amount - acceptAmount);
 
             Fx.itemTransfer.at(wx, wy, acceptAmount, item.color, build);
         }
@@ -132,7 +118,7 @@ public class ArmPicker extends ArmPart{
                 Tmp.c2.set(entity.team().color).lerp(Color.white, colorTime).a(0.7f));
 
             if(!Vars.renderer.pixelator.enabled()){
-                int displayAmount = (int)(amount * itemTime);
+                int displayAmount = Mathf.round(amount * itemTime);
                 Fonts.outline.draw(displayAmount + "", wx, wy - 5f, Pal.accent, 0.25f * itemTime / Scl.scl(1f), false, Align.center);
             }
 
@@ -145,5 +131,12 @@ public class ArmPicker extends ArmPart{
         super.update();
 
         itemTime = Mathf.lerpDelta(itemTime, Mathf.num(itemStack.amount > 0), 0.1f);
+    }
+
+    @Override
+    public ArmPart clone(){
+        ArmPicker picker = (ArmPicker)super.clone();
+        picker.itemStack = new ItemStack();
+        return picker;
     }
 }

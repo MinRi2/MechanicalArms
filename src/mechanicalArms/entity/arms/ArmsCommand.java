@@ -14,9 +14,11 @@ import mindustry.type.*;
  * Create by 2025/1/26
  */
 public abstract class ArmsCommand{
+    public boolean updated;
+    public boolean released;
+
     /* Only run one time then only check whether finished. */
-    public boolean updateOnce = false;
-    public boolean updated = false;
+    protected boolean updateOnce;
 
     /**
      * @param x work x
@@ -24,7 +26,9 @@ public abstract class ArmsCommand{
      */
     public abstract void update(float x, float y, Teamc entity);
 
-    public abstract boolean finished();
+    public boolean finished(){
+        return updated;
+    }
 
     public static class CommandSequence extends ArmsCommand{
         public final Seq<ArmsCommand> commands;
@@ -59,19 +63,31 @@ public abstract class ArmsCommand{
     }
 
     public static class RotateCommand extends ArmsCommand{
-        public float destX, destY;
         public Seq<ArmPart> armParts;
+        public float destX, destY;
+
+        private float[] destAngles;
 
         public RotateCommand(Seq<ArmPart> armParts, float destX, float destY){
+            this.armParts = armParts;
             this.destX = destX;
             this.destY = destY;
-            this.armParts = armParts;
-
-            updateOnce = true;
         }
 
         @Override
         public void update(float wx, float wy, Teamc entity){
+            if(destAngles == null){
+                destAngles = new float[armParts.size];
+
+                calculateAngles(entity);
+            }
+
+            for(int i = 0; i < armParts.size; i++){
+                armParts.get(i).rotateTo(destAngles[i]);
+            }
+        }
+
+        private void calculateAngles(Teamc entity){
             float x = entity.getX(), y = entity.getY();
 
             ArmPart arm1 = armParts.get(0), arm2 = armParts.get(1);
@@ -84,7 +100,7 @@ public abstract class ArmsCommand{
             float angle1, angle2;
             if(pointCount != 2){
                 angle1 = angle2 = Angles.angle(x, y, destX, destY);
-            }else {
+            }else{
                 Vec2 p = p1;
 
                 Vec2 dv1 = Tmp.v3.set(x, y).sub(p1),
@@ -102,13 +118,28 @@ public abstract class ArmsCommand{
                 angle2 = Angles.angle(p.x, p.y, destX, destY);
             }
 
-            arm1.rotateTo(angle1);
-            arm2.rotateTo(angle2);
+            destAngles[0] = angle1;
+            destAngles[1] = angle2;
         }
 
         @Override
         public boolean finished(){
-            return !armParts.contains(arm -> arm.rotating);
+            if(!super.finished()) return false;
+
+            for(int i = 0; i < armParts.size; i++){
+                if(!Mathf.equal(armParts.get(i).rotation, destAngles[i])){
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public String toString(){
+            return "RotateCommand{" +
+            "destX=" + destX +
+            ", destY=" + destY +
+            '}';
         }
     }
 
@@ -121,6 +152,8 @@ public abstract class ArmsCommand{
             this.picker = picker;
             this.type = type;
             this.item = item;
+
+            updateOnce = true;
         }
 
         @Override
@@ -133,8 +166,11 @@ public abstract class ArmsCommand{
         }
 
         @Override
-        public boolean finished(){
-            return true; // Only run one time.
+        public String toString(){
+            return "PickerCommand{" +
+            "item=" + item +
+            ", type=" + type +
+            '}';
         }
     }
 
@@ -153,8 +189,8 @@ public abstract class ArmsCommand{
         }
 
         @Override
-        public boolean finished(){
-            return true;
+        public String toString(){
+            return "DumpCommand{}";
         }
     }
 }

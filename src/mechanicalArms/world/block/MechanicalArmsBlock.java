@@ -6,8 +6,11 @@ import arc.util.*;
 import mechanicalArms.entity.arms.*;
 import mechanicalArms.entity.arms.ArmsCommand.*;
 import mindustry.content.*;
+import mindustry.ctype.*;
 import mindustry.gen.*;
 import mindustry.graphics.*;
+import mindustry.logic.*;
+import mindustry.type.*;
 import mindustry.world.*;
 import mindustry.world.blocks.*;
 
@@ -42,8 +45,19 @@ public class MechanicalArmsBlock extends Block{
         }
 
         @Override
+        public double sense(Content content){
+            if(content instanceof Item item){
+                ArmPicker picker = (ArmPicker)controller.worker;
+                if(picker.itemStack.item == item){
+                    return picker.itemStack.amount;
+                }
+            }
+            return Double.NaN;
+        }
+
+        @Override
         public Unit unit(){
-            if (unit == null) {
+            if(unit == null){
                 unit = (BlockUnitUnit)UnitTypes.block.create(this.team);
                 unit.tile(this);
             }

@@ -54,6 +54,8 @@ public class ArmPart implements Cloneable{
     }
 
     public void rotateTo(float rotation){
+        if(Mathf.equal(rotateTo, rotation)) return;
+
         rotateTo = rotation;
         rotating = true;
     }

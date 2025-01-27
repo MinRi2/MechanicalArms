@@ -7,9 +7,7 @@ import arc.scene.ui.layout.*;
 import arc.struct.*;
 import arc.util.*;
 import mechanicalArms.*;
-import mechanicalArms.entity.arms.*;
-import mechanicalArms.entity.arms.ArmsCommand.*;
-import mechanicalArms.world.block.MechanicalArmsBlock.*;
+import mechanicalArms.logic.ArmsLInstructions.*;
 import mindustry.*;
 import mindustry.gen.*;
 import mindustry.logic.*;
@@ -28,7 +26,9 @@ public class ArmsLStatements{
 
     @SuppressWarnings("unchecked")
     private static final Seq<Prov<ArmsLStatement>> armsAllStatements = Seq.with(
-    PickupStatement::new
+    PickupStatement::new,
+    RotateStatement::new,
+    DumpStatement::new
     );
 
     /** Register to LogicIO
@@ -53,6 +53,11 @@ public class ArmsLStatements{
             this.name = ArmsVars.logicArmsToken + "." + name;
         }
 
+        @Override
+        public LCategory category(){
+            return ArmsLogic.armsCategory;
+        }
+
         public final void write(StringBuilder builder){
             writer.start(builder);
 
@@ -74,33 +79,19 @@ public class ArmsLStatements{
         public ArmsPickupType type = ArmsPickupType.item;
         public String item = "@copper";
 
-        public String finishedOut = "isFinished";
-
         private final Table extraTable = new Table();
 
         public PickupStatement(){
             super("pickup");
         }
 
-        public PickupStatement set(String picker, ArmsPickupType type, String item, String finishedOut){
-            this.picker = picker;
-            this.type = type;
-            this.item = item;
-            this.finishedOut = finishedOut;
-            return this;
-        }
-
-        @Override
-        public LCategory category(){
-            return ArmsLogic.armsCategory;
-        }
-
         @Override
         public void build(Table table){
-            table.defaults().padLeft(8f);
+            table.defaults().padLeft(10f);
+
             fields(table, "Picker", picker, string -> picker = string);
 
-            table.add("type").padLeft(16f);
+            table.add("type");
             table.button(b -> {
                 b.label(() -> type.name());
 
@@ -110,11 +101,7 @@ public class ArmsLStatements{
                 }));
             }, Styles.logict, () -> {}).size(40f).color(category().color);
 
-            table.add(extraTable).padLeft(16f);
-
-            fields(table, "finished", finishedOut,string -> {
-                finishedOut = string;
-            }).padRight(0).color(category().color).get();
+            table.add(extraTable);
 
             rebuildExtraTable();
         }
@@ -122,7 +109,7 @@ public class ArmsLStatements{
         private void rebuildExtraTable(){
             Table table = extraTable;
 
-            table.defaults().padLeft(8f);
+            table.defaults().padLeft(10f);
             table.clearChildren();
 
             if(type == ArmsPickupType.item){
@@ -160,21 +147,22 @@ public class ArmsLStatements{
         public void write(ArmsLStatementWriter writer){
             writer.write(picker); // 1
             writer.write(type.name()); // 2
-            writer.write(finishedOut); // 3
             if(type == ArmsPickupType.item){
-                writer.write(item); // 4
+                writer.write(item); // 3
             }
         }
 
         @Override
         public LStatement read(String[] tokens){
-            picker = tokens[1];
+            PickupStatement statement = new PickupStatement();
 
-            if(tokens.length >= 3){
-                finishedOut = tokens[3];
-            }
+            String picker = this.picker;
+            ArmsPickupType type = this.type;
+            String item = this.item;
 
-            if(tokens.length >= 4){
+            int params = tokens.length - 1;
+            if(params >= 1) picker = tokens[1];
+            if(params >= 2){
                 type = Structs.find(ArmsPickupType.all, t -> t.name().equals(tokens[2]));
 
                 // reset
@@ -182,66 +170,115 @@ public class ArmsLStatements{
                     type = ArmsPickupType.item;
                     item = "@copper";
                 }else if(type == ArmsPickupType.item){
-                    item = tokens[4];
+                    item = tokens[3];
                 }
             }
-            return new PickupStatement().set(picker, type, item, finishedOut);
+
+            statement.picker = picker;
+            statement.type = type;
+            statement.item = item;
+
+            return statement;
         }
 
         @Override
         public LInstruction build(LAssembler builder){
-            return new PickupInstruction(builder.var(picker), type, builder.var(item), builder.var(finishedOut));
+            return new PickupInstruction(builder.var(picker), type, builder.var(item));
+        }
+    }
+
+    public static class RotateStatement extends ArmsLStatement{
+        public String picker = "picker1";
+        public String x = "0", y = "0";
+
+        public String finishedOut = "finished";
+
+        public RotateStatement(){
+            super("Rotate");
         }
 
-        private static class PickupInstruction implements LInstruction{
-            public LVar picker;
-            public ArmsPickupType type;
-            public LVar p1;
-            public LVar finishedOut;
+        @Override
+        public void build(Table table){
+            table.defaults().padLeft(10f);
+            fields(table, "Picker", picker, string -> picker = string);
 
-            private ArmsCommand command;
+            fields(table, "x", x, string -> x = string);
+            fields(table, "y", y, string -> y = string);
 
-            public PickupInstruction(LVar picker, ArmsPickupType type, LVar p1, LVar finishedOut){
-                this.picker = picker;
-                this.type = type;
-                this.p1 = p1;
-                this.finishedOut = finishedOut;
-            }
+            fields(table, "finished", finishedOut, string -> finishedOut = string);
+        }
 
-            @Override
-            public void run(LExecutor exec){
-                if(command != null){
-                    boolean finished = command.finished();
-                    finishedOut.setbool(finished);
+        @Override
+        public LInstruction build(LAssembler builder){
+            return new RotateInstruction(builder.var(finishedOut), builder.var(picker), builder.var(x), builder.var(y));
+        }
 
-                    if(finished){
-                        command = null;
-                    }
-                    return;
-                }
+        @Override
+        public void write(ArmsLStatementWriter writer){
+            writer.write(finishedOut); // 1
+            writer.write(picker); // 2
+            writer.write(x); // 3
+            writer.write(y); // 4
+        }
 
-                Building build = picker.building();
-                if(!(build instanceof MechanicalArmsBuild pickerBuild)) return;
+        @Override
+        public LStatement read(String[] tokens){
+            RotateStatement statement = new RotateStatement();
 
-                ArmsController controller = pickerBuild.controller;
-                if(!(controller.worker instanceof ArmPicker armPicker)) return;
+            String picker = this.picker;
+            String x = this.x, y = this.y;
+            String finishedOut = this.finishedOut;
 
-                finishedOut.setbool(false);
+            int params = tokens.length - 1;
+            if(params >= 1) finishedOut = tokens[1];
+            if(params >= 2) picker = tokens[2];
+            if(params >= 3) x = tokens[3];
+            if(params >= 4) y = tokens[4];
 
-                switch(type){
-                    case item -> {
-                        if(p1.obj() instanceof Item item){
-                            ArmsCommand command = new PickerCommand(armPicker, type, item);
-                            boolean added = controller.addCommand(command);
-                            if(added){
-                                this.command = command;
-                                finishedOut.setbool(true);
-                            }
-                        }
-                    }
-                    case build, unit -> controller.addCommand(new PickerCommand(armPicker, type, null));
-                }
-            }
+            statement.finishedOut = finishedOut;
+            statement.picker = picker;
+            statement.x = x;
+            statement.y = y;
+
+            return statement;
+        }
+    }
+
+    public static class DumpStatement extends ArmsLStatement{
+        public String picker = "picker1";
+
+        public DumpStatement(){
+            super("Dump");
+        }
+
+        @Override
+        public void build(Table table){
+            table.defaults().padLeft(10f);
+            fields(table, "Picker", picker, string -> picker = string);
+        }
+
+        @Override
+        public LInstruction build(LAssembler builder){
+            return new DumpInstruction(builder.var(picker));
+        }
+
+        @Override
+        public void write(ArmsLStatementWriter writer){
+            writer.write(picker); // 1
+        }
+
+        @Override
+        public LStatement read(String[] tokens){
+            DumpStatement statement = new DumpStatement();
+
+            String picker = this.picker;
+
+            int params = tokens.length - 1;
+            if(params >= 1) picker = tokens[1];
+
+            statement.picker = picker;
+
+            return statement;
         }
     }
 }

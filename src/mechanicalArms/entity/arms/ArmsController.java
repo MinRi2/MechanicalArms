@@ -59,7 +59,7 @@ public class ArmsController{
 
     private boolean checkCommand(ArmsCommand command){
         if(command instanceof RotateCommand rotc){
-            if(!Mathf.equal(lastRotateX, rotc.destX) && !Mathf.equal(lastRotateY, rotc.destY)){
+            if(!Mathf.equal(lastRotateX, rotc.destX) || !Mathf.equal(lastRotateY, rotc.destY)){
                 lastRotateX = rotc.destX;
                 lastRotateY = rotc.destY;
                 return true;
@@ -70,8 +70,9 @@ public class ArmsController{
         return true;
     }
 
-    public void rotateTo(float rx, float ry){
-        addCommand(new RotateCommand(arms, rx, ry));
+    public RotateCommand rotateTo(float rx, float ry){
+        RotateCommand command = new RotateCommand(arms, rx, ry);
+        return addCommand(command) ? command : null;
     }
 
     public void draw(){
@@ -92,21 +93,6 @@ public class ArmsController{
         for(ArmPart arm : arms){
             arm.update();
         }
-
-//        if(working){
-//            if(arms.contains(arm -> arm.rotating)) return;
-//
-//            Vec2 jointPos = v1.set(x, y);
-//            arms.each(arm -> {
-//                if(arm == worker) return;
-//                jointPos.add(arm.getJointPoint());
-//            });
-//
-//            Vec2 workPoint = worker.getWorkPoint(jointPos.x, jointPos.y);
-//
-//            worker.work(workPoint.x, workPoint.y);
-//            working = false;
-//        }
     }
 
     private void updateCommand(){
@@ -127,6 +113,7 @@ public class ArmsController{
         }
 
         if(currentCommand.finished()){
+            currentCommand.released = true;
             currentCommand = null;
         }
     }
