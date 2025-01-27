@@ -17,9 +17,9 @@ public class ArmsLInstructions{
 
     public static abstract class ArmsLAsyncInstruction implements LInstruction{
         protected ArmsCommand command;
-        public LVar finishedOut;
+        public int finishedOut;
 
-        public ArmsLAsyncInstruction(LVar finishedOut){
+        public ArmsLAsyncInstruction(int finishedOut){
             this.finishedOut = finishedOut;
         }
 
@@ -27,7 +27,7 @@ public class ArmsLInstructions{
         public final void run(LExecutor exec){
             if(command != null){
                 boolean finished = command.released; // wait for released
-                finishedOut.setbool(finished);
+                exec.setbool(finishedOut, finished);
 
                 if(finished){
                     command = null;
@@ -38,7 +38,7 @@ public class ArmsLInstructions{
             runLogicAsync(exec);
 
             if(command == null){
-                finishedOut.setbool(true);
+                exec.setbool(finishedOut, true);
             }
         }
 
@@ -46,13 +46,13 @@ public class ArmsLInstructions{
     }
 
     public static class PickupInstruction implements LInstruction{
-        public LVar picker;
+        public int picker;
         public ArmsPickupType type;
-        public LVar p1;
+        public int p1;
 
         protected ArmsCommand command;
 
-        public PickupInstruction(LVar picker, ArmsPickupType type, LVar p1){
+        public PickupInstruction(int picker, ArmsPickupType type, int p1){
             this.picker = picker;
             this.type = type;
             this.p1 = p1;
@@ -65,7 +65,7 @@ public class ArmsLInstructions{
                 command = null;
             }
 
-            Object obj = picker.obj();
+            Object obj = exec.obj(picker);
             if(!(obj instanceof MechanicalArmsBuild pickerBuild)) return;
 
             ArmsController controller = pickerBuild.controller;
@@ -73,7 +73,7 @@ public class ArmsLInstructions{
 
             switch(type){
                 case item -> {
-                    if(p1.obj() instanceof Item item){
+                    if(exec.obj(p1) instanceof Item item){
                         command = new PickerCommand(armPicker, type, item);
                     }
                 }
@@ -85,10 +85,10 @@ public class ArmsLInstructions{
     }
 
     public static class RotateInstruction extends ArmsLAsyncInstruction{
-        public LVar picker;
-        public LVar x, y;
+        public int picker;
+        public int x, y;
 
-        public RotateInstruction(LVar finishedOut, LVar picker, LVar x, LVar y){
+        public RotateInstruction(int finishedOut, int picker, int x, int y){
             super(finishedOut);
 
             this.picker = picker;
@@ -98,21 +98,21 @@ public class ArmsLInstructions{
 
         @Override
         public void runLogicAsync(LExecutor exec){
-            if(!(picker.obj() instanceof MechanicalArmsBuild pickerBuild)) return;
+            if(!(exec.obj(picker) instanceof MechanicalArmsBuild pickerBuild)) return;
 
-            float rx = x.numi() * Vars.tilesize;
-            float ry = y.numi() * Vars.tilesize;
+            float rx = exec.numi(x) * Vars.tilesize;
+            float ry = exec.numi(y) * Vars.tilesize;
 
             command = pickerBuild.controller.rotateTo(rx, ry);
         }
     }
 
     public static class DumpInstruction implements LInstruction{
-        public LVar picker;
+        public int picker;
 
         protected ArmsCommand command;
 
-        public DumpInstruction(LVar picker){
+        public DumpInstruction(int picker){
             this.picker = picker;
         }
 
@@ -123,7 +123,7 @@ public class ArmsLInstructions{
                 command = null;
             }
 
-            Object obj = picker.obj();
+            Object obj = exec.obj(picker);
             if(!(obj instanceof MechanicalArmsBuild pickerBuild)) return;
 
             ArmsController controller = pickerBuild.controller;
