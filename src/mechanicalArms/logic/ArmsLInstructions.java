@@ -1,6 +1,5 @@
 package mechanicalArms.logic;
 
-import arc.struct.*;
 import arc.util.*;
 import mechanicalArms.entity.arms.*;
 import mechanicalArms.entity.arms.ArmsCommand.*;
@@ -16,59 +15,69 @@ import mindustry.type.*;
  */
 public class ArmsLInstructions{
 
-    public static abstract class ArmsLAsyncInstruction implements LInstruction{
+    public static abstract class ArmsLControlInstruction implements LInstruction{
+        public LVar picker;
+        public boolean wait;
+        public @Nullable LVar finishedOut;
 
         protected ArmsCommand command;
-        public LVar finishedOut;
-        public ArmsLAsyncInstruction(LVar finishedOut){
+
+        public ArmsLControlInstruction set(LVar picker, boolean wait, LVar finishedOut){
+            this.picker = picker;
+            this.wait = wait;
             this.finishedOut = finishedOut;
+            return this;
         }
 
         @Override
         public final void run(LExecutor exec){
             if(command != null){
                 boolean finished = command.released; // wait for released
-                finishedOut.setbool(finished);
+
+                if(finishedOut != null){
+                    finishedOut.setbool(finished);
+                }
 
                 if(finished){
                     command = null;
+                }else if(wait){
+                    exec.counter.numval--;
+                    exec.yield = true;
                 }
                 return;
             }
 
-            finishedOut.setbool(false);
+            if(finishedOut != null){
+                finishedOut.setbool(false);
+            }
 
-            runLogicAsync(exec);
+            execute(exec);
 
-            if(command == null){
+            if(finishedOut != null && command == null){
                 finishedOut.setbool(true);
+            }
+
+            if(wait && command != null){
+                exec.counter.numval--;
+                exec.yield = true;
             }
         }
 
-        public abstract void runLogicAsync(LExecutor exec);
+        public abstract void execute(LExecutor exec);
 
     }
 
-    public static class PickupInstruction implements LInstruction{
-        public LVar picker;
+    public static class PickupInstruction extends ArmsLControlInstruction{
         public ArmsPickupType type;
         public LVar p1;
 
-        protected ArmsCommand command;
-
-        public PickupInstruction(LVar picker, ArmsPickupType type, LVar p1){
-            this.picker = picker;
+        public PickupInstruction(ArmsPickupType type, LVar p1){
             this.type = type;
             this.p1 = p1;
         }
 
         @Override
-        public void run(LExecutor exec){
-            if(command != null){
-                if(!command.released) return;
-                command = null;
-            }
-
+        public void execute(LExecutor exec){
             Object obj = picker.obj();
             if(!(obj instanceof MechanicalArmsBuild pickerBuild)) return;
 
@@ -88,20 +97,16 @@ public class ArmsLInstructions{
         }
     }
 
-    public static class RotateInstruction extends ArmsLAsyncInstruction{
-        public LVar picker;
+    public static class RotateInstruction extends ArmsLControlInstruction{
         public LVar x, y;
 
-        public RotateInstruction(LVar picker, LVar x, LVar y, LVar finishedOut){
-            super(finishedOut);
-
-            this.picker = picker;
+        public RotateInstruction(LVar x, LVar y){
             this.x = x;
             this.y = y;
         }
 
         @Override
-        public void runLogicAsync(LExecutor exec){
+        public void execute(LExecutor exec){
             if(!(picker.obj() instanceof MechanicalArmsBuild pickerBuild)) return;
 
             float rx = x.numi() * Vars.tilesize;
@@ -111,22 +116,10 @@ public class ArmsLInstructions{
         }
     }
 
-    public static class DumpInstruction implements LInstruction{
-        public LVar picker;
-
-        protected ArmsCommand command;
-
-        public DumpInstruction(LVar picker){
-            this.picker = picker;
-        }
+    public static class DumpInstruction extends ArmsLControlInstruction{
 
         @Override
-        public void run(LExecutor exec){
-            if(command != null){
-                if(!command.released) return;
-                command = null;
-            }
-
+        public void execute(LExecutor exec){
             Object obj = picker.obj();
             if(!(obj instanceof MechanicalArmsBuild pickerBuild)) return;
 

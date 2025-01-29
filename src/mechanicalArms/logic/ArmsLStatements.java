@@ -1,6 +1,7 @@
 package mechanicalArms.logic;
 
 import arc.func.*;
+import arc.scene.*;
 import arc.scene.style.*;
 import arc.scene.ui.*;
 import arc.scene.ui.layout.*;
@@ -29,7 +30,8 @@ public class ArmsLStatements{
     ControlSwitchStatement::new
     );
 
-    /** Register to LogicIO
+    /**
+     * Register to LogicIO
      * this will be invoked on added to {@link LCanvas} as example
      * and make customized statement iterable by {@link LogicDialog}
      */
@@ -85,10 +87,25 @@ public class ArmsLStatements{
         public String picker = "picker1";
         public ArmsLControlType type = ArmsLControlType.pick;
 
+        public static final Boolean[] booleans = {true, false};
+
+        // All the control instructions are logic async. Provide some ways to await it;
+        public boolean wait = true;
+        public String finishedOut = "finished";
+
+        private final Table finishedTable = new Table();
         protected Table statementTable = new Table();
 
         public ControlSwitchStatement(){
             super("ArmsControl");
+        }
+
+        public ControlSwitchStatement set(String picker, ArmsLControlType type, boolean wait, String finishedOut){
+            this.picker = picker;
+            this.type = type;
+            this.wait = wait;
+            this.finishedOut = finishedOut;
+            return this;
         }
 
         @Override
@@ -109,14 +126,39 @@ public class ArmsLStatements{
                         this.type = type;
                         rebuildStatementTable();
                     }));
-                }, Styles.logict, () -> {}).width(88f / Scl.scl()).color(category().color);
+                }, Styles.logict, () -> {
+                }).width(88f / Scl.scl()).color(category().color);
             });
+
+            table.add("wait");
+
+            table.button(b -> {
+                b.label(() -> wait + "");
+
+                b.clicked(() -> showSelect(b, booleans, wait, wait -> {
+                    this.wait = wait;
+                    rebuildFinishedTable();
+                }));
+            }, Styles.logict, () -> {}).width(88f / Scl.scl()).color(category().color);
+
+            finishedTable.setColor(category().color);
+            table.add(finishedTable);
 
             table.row();
 
             table.add(statementTable).colspan(table.getColumns()).color(category().color);
 
+            rebuildFinishedTable();
             rebuildStatementTable();
+        }
+
+        private void rebuildFinishedTable(){
+            finishedTable.clearChildren();
+
+            finishedTable.defaults().padLeft(10f);
+            if(!wait){
+                fields(finishedTable, "finished", finishedOut, string -> finishedOut = string).width(88f / Scl.scl());
+            }
         }
 
         private void rebuildStatementTable(){
@@ -129,8 +171,10 @@ public class ArmsLStatements{
         public void write(ArmsLStatementWriter writer){
             writer.write(picker); // 1
             writer.write(type.name()); // 2
+            writer.write(wait); // 3
+            writer.write(finishedOut); // 4
             ArmsLControlStatement statement = getStatement(type);
-            statement.write(writer); // 3...
+            statement.write(writer); // 5...
         }
 
         @Override
@@ -139,35 +183,44 @@ public class ArmsLStatements{
 
             String picker = this.picker;
             ArmsLControlType type = this.type;
+            boolean wait = this.wait;
+            String finishedOut = this.finishedOut;
 
-            if(tokens.length >= 2){
+            int params = tokens.length - 1;
+            if(params >= 1){
                 picker = tokens[1];
             }
 
-            if(tokens.length >= 3){
+            if(params >= 2){
                 type = ArmsLControlType.valueOf(tokens[2]);
+            }
+
+            if(params >= 3){
+                wait = Boolean.parseBoolean(tokens[3]);
+            }
+
+            if(params >= 4){
+                finishedOut = tokens[4];
             }
 
             ArmsLControlStatement selected = statement.getStatement(type);
 
-            if(tokens.length >= 4){
-                String[] paramsTokens = new String[tokens.length - 2];
-                System.arraycopy(tokens, 3, paramsTokens, 0, paramsTokens.length - 1);
+            if(params >= 5){
+                String[] paramsTokens = new String[params - 4];
+                System.arraycopy(tokens, 5, paramsTokens, 0, paramsTokens.length - 1);
 
                 selected.read(paramsTokens);
             }else{
                 selected.read(null);
             }
 
-            statement.type = type;
-            statement.picker = picker;
-
-            return statement;
+            return statement.set(picker, type, wait, finishedOut);
         }
 
         @Override
         public LInstruction build(LAssembler builder){
-            return getStatement(type).build(builder, builder.var(picker));
+            LVar finishedOut = !wait ? builder.var(this.finishedOut) : null;
+            return getStatement(type).build(builder).set(builder.var(picker), wait, finishedOut);
         }
 
         private ArmsLControlStatement getStatement(ArmsLControlType type){
@@ -187,16 +240,12 @@ public class ArmsLStatements{
         }
 
         @Override
-        @Deprecated
-        public final LInstruction build(LAssembler builder){
-            return null;
-        }
-
-        public abstract LInstruction build(LAssembler builder, LVar picker);
+        public abstract ArmsLControlInstruction build(LAssembler builder);
 
         @Override
         @Deprecated
-        public final void write(StringBuilder builder){}
+        public final void write(StringBuilder builder){
+        }
 
         // Customized LStatements must implement read/write by itself.
         public void write(ArmsLStatementWriter writer){
@@ -222,7 +271,10 @@ public class ArmsLStatements{
                     this.type = type;
                     rebuildExtraTable();
                 }));
-            }, Styles.logict, () -> {}).width(88f / Scl.scl()).color(category().color);
+            }, Styles.logict, () -> {
+            }).width(88f / Scl.scl()).color(category().color);
+
+            super.build(table);
 
             extraTable.setColor(table.color);
             table.add(extraTable);
@@ -237,7 +289,7 @@ public class ArmsLStatements{
             table.clearChildren();
 
             if(type == ArmsPickupType.item){
-                TextField field = fields(table, "item", item,string -> {
+                TextField field = fields(table, "item", item, string -> {
                     item = string;
                     rebuildExtraTable();
                 }).width(88f / Scl.scl()).padRight(0).color(category().color).get();
@@ -250,7 +302,7 @@ public class ArmsLStatements{
                         t.table(i -> {
                             i.left();
                             int c = 0;
-                            for(Item item : Vars.content.items()){
+                            for(Item item : content.items()){
                                 if(!item.unlockedNow()) continue;
 
                                 i.button(new TextureRegionDrawable(item.uiIcon), Styles.flati, iconSmall, () -> {
@@ -263,7 +315,8 @@ public class ArmsLStatements{
                             }
                         }).colspan(3).width(240f).left();
                     }));
-                }, Styles.logict, () -> {}).size(40f).padLeft(-1).color(category().color);
+                }, Styles.logict, () -> {
+                }).size(40f).padLeft(-1).color(category().color);
             }
         }
 
@@ -292,34 +345,31 @@ public class ArmsLStatements{
         }
 
         @Override
-        public LInstruction build(LAssembler builder, LVar picker){
-            return new PickupInstruction(picker, type, builder.var(item));
+        public ArmsLControlInstruction build(LAssembler builder){
+            return new PickupInstruction(type, builder.var(item));
         }
     }
 
     public static class RotateStatement extends ArmsLControlStatement{
         public String x = "0", y = "0";
 
-        public String finishedOut = "finished";
-
         @Override
         public void build(Table table){
             fields(table, "x", x, string -> x = string);
             fields(table, "y", y, string -> y = string);
 
-            fields(table, "finished", finishedOut, string -> finishedOut = string).width(88f / Scl.scl());
+            super.build(table);
         }
 
         @Override
-        public LInstruction build(LAssembler builder, LVar picker){
-            return new RotateInstruction(picker, builder.var(x), builder.var(y), builder.var(finishedOut));
+        public ArmsLControlInstruction build(LAssembler builder){
+            return new RotateInstruction(builder.var(x), builder.var(y));
         }
 
         @Override
         public void write(ArmsLStatementWriter writer){
             writer.write(x); // 0
             writer.write(y); // 1
-            writer.write(finishedOut); // 2
         }
 
         @Override
@@ -327,15 +377,14 @@ public class ArmsLStatements{
             int params = paramTokens.length - 1;
             if(params >= 0) x = paramTokens[0];
             if(params >= 1) y = paramTokens[1];
-            if(params >= 2) finishedOut = paramTokens[2];
         }
     }
 
     public static class DumpStatement extends ArmsLControlStatement{
 
         @Override
-        public LInstruction build(LAssembler builder, LVar picker){
-            return new DumpInstruction(picker);
+        public ArmsLControlInstruction build(LAssembler builder){
+            return new DumpInstruction();
         }
     }
 }
