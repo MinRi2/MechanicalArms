@@ -120,9 +120,9 @@ public class ArmsLStatements{
                 top.add("do");
 
                 top.button(b -> {
-                    b.label(() -> type.name());
+                    b.label(() -> type.name);
 
-                    b.clicked(() -> showSelect(b, ArmsLControlType.all, type, type -> {
+                    b.clicked(() -> showSelect(b, ArmsLControlType.all.toArray(), type, type -> {
                         this.type = type;
                         rebuildStatementTable();
                     }));
@@ -170,7 +170,7 @@ public class ArmsLStatements{
         @Override
         public void write(ArmsLStatementWriter writer){
             writer.write(picker); // 1
-            writer.write(type.name()); // 2
+            writer.write(type.name); // 2
             writer.write(wait); // 3
             writer.write(finishedOut); // 4
             ArmsLControlStatement statement = getStatement(type);
@@ -192,7 +192,7 @@ public class ArmsLStatements{
             }
 
             if(params >= 2){
-                type = ArmsLControlType.valueOf(tokens[2]);
+                type = ArmsLControlType.get(tokens[2]);
             }
 
             if(params >= 3){
