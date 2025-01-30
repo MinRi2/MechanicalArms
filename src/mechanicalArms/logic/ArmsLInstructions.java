@@ -116,11 +116,6 @@ public class ArmsLInstructions{
     }
 
     public static class DumpInstruction extends ArmsLControlInstruction{
-        public int picker;
-
-        public DumpInstruction(int picker){
-            this.picker = picker;
-        }
 
         @Override
         public void execute(LExecutor exec){

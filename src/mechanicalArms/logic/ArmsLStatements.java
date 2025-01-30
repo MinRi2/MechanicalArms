@@ -219,7 +219,7 @@ public class ArmsLStatements{
 
         @Override
         public LInstruction build(LAssembler builder){
-            LVar finishedOut = !wait ? builder.var(this.finishedOut) : null;
+            int finishedOut = !wait ? builder.var(this.finishedOut) : -1;
             return getStatement(type).build(builder).set(builder.var(picker), wait, finishedOut);
         }
 
