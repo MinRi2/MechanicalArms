@@ -29,4 +29,9 @@ public class ArmsLControlType{
     public ArmsLControlStatement getStatement(){
         return prov.get();
     }
+
+    @Override
+    public String toString(){
+        return name;
+    }
 }
