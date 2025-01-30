@@ -11,6 +11,7 @@ import mechanicalArms.entity.arms.ArmsCommand.*;
 import mindustry.*;
 import mindustry.content.*;
 import mindustry.ctype.*;
+import mindustry.entities.units.*;
 import mindustry.gen.*;
 import mindustry.graphics.*;
 import mindustry.logic.*;
@@ -72,6 +73,13 @@ public class MechanicalArmsBlock extends Block{
 
         drawArms(x * Vars.tilesize, y * Vars.tilesize);
         drawWorkRange(x * Vars.tilesize, y * Vars.tilesize, Vars.player.team().color);
+    }
+
+    @Override
+    public void drawPlanRegion(BuildPlan plan, Eachable<BuildPlan> list){
+        super.drawPlanRegion(plan, list);
+
+        drawArms(plan.x * Vars.tilesize, plan.y * Vars.tilesize);
     }
 
     public class MechanicalArmsBuild extends Building implements ControlBlock{

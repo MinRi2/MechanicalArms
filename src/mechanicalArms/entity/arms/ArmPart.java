@@ -103,8 +103,6 @@ public class ArmPart implements Cloneable{
         Draw.rect(armRegion, x + v.x / 2, y + v.y / 2, length, armWidth, rotation);
         Draw.rect(baseRegion, x, y, armWidth, armWidth, rotation);
         Draw.rect(jointRegion, x + v.x, y + v.y, armWidth, armWidth, rotation);
-
-        Draw.reset();
     }
 
     /**

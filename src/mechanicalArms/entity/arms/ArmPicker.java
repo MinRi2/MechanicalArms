@@ -232,8 +232,6 @@ public class ArmPicker extends ArmPart{
                 int displayAmount = Mathf.round(amount * itemTime);
                 Fonts.outline.draw(displayAmount + "", wx, wy - 5f, Pal.accent, 0.25f * itemTime / Scl.scl(1f), false, Align.center);
             }
-
-            Draw.reset();
         }
 
         if(payload != null){
@@ -251,7 +249,7 @@ public class ArmPicker extends ArmPart{
         Lines.arc(wx, wy, radius, fraction, 90 + rotation);
         Lines.stroke(0.7f, color);
         Lines.arc(wx, wy, radius, fraction, 90 + rotation);
-        Draw.reset();
+        Lines.stroke(1f);
     }
 
     @Override
