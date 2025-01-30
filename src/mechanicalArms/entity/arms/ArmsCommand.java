@@ -128,7 +128,7 @@ public abstract class ArmsCommand{
             }else{
                 Vec2 jointPos = Tmp.v1.setZero();
                 for(ArmPart arm : armParts){
-                    jointPos.add(arm.getJointPoint());
+                    jointPos.add(arm.getWorkPoint());
                     tmpVec.add(jointPos.cpy());
                 }
 
