@@ -21,6 +21,14 @@ public class ArmsBlocks{
                 length = 4.5f * Vars.tilesize;
                 rotateSpeed = 210f / 60;
             }},
+            new ArmPart(){{
+                length = 4.5f * Vars.tilesize;
+                rotateSpeed = 210f / 60;
+            }},
+            new ArmPart(){{
+                length = 4.5f * Vars.tilesize;
+                rotateSpeed = 210f / 60;
+            }},
             new ArmPicker(){{
                 length = 3.5f * Vars.tilesize;
                 rotateSpeed = 190f / 60;
