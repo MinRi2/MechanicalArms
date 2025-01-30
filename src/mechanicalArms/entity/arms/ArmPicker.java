@@ -63,13 +63,12 @@ public class ArmPicker extends ArmPart{
 
         if(build == null || !build.block.hasItems || !build.items.has(item)) return;
 
-        int spareAmount = itemCapacity - itemStack.amount;
-        int amount = Math.min(build.items.get(item), spareAmount);
+        int addAmount = addItem(item, build.items.get(item));
 
-        build.items.remove(item, amount);
-        itemStack.set(item, itemStack.amount + amount);
+        build.items.remove(item, addAmount);
+        itemStack.set(item, itemStack.amount + addAmount);
 
-        Fx.itemTransfer.at(wx, wy, amount, item.color, entity);
+        Fx.itemTransfer.at(wx, wy, addAmount, item.color, entity);
     }
 
     public void pickupBuild(float x, float y){
@@ -179,6 +178,17 @@ public class ArmPicker extends ArmPart{
                 payload = null;
             }
         }
+    }
+
+    public int addItem(Item item, int amount){
+        if(canPickupItem(item)){
+            int spareAmount = itemCapacity - itemStack.amount;
+            int addAmount = Math.min(amount, spareAmount);
+
+            itemStack.set(item, itemStack.amount + addAmount);
+            return addAmount;
+        }
+        return 0;
     }
 
     public boolean canPickupItem(Item item){

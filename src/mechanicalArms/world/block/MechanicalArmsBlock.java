@@ -96,6 +96,18 @@ public class MechanicalArmsBlock extends Block{
         }
 
         @Override
+        public boolean acceptItem(Building source, Item item){
+            return controller.worker instanceof ArmPicker picker && picker.canPickupItem(item);
+        }
+
+        @Override
+        public void handleItem(Building source, Item item){
+            if(controller.worker instanceof ArmPicker picker){
+                picker.addItem(item, 1);
+            }
+        }
+
+        @Override
         public double sense(Content content){
             if(content instanceof Item item && controller.worker instanceof ArmPicker picker){
                 if(picker.itemStack.item == item){
