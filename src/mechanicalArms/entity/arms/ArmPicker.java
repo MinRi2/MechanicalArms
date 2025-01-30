@@ -145,8 +145,9 @@ public class ArmPicker extends ArmPart{
                 Building build = b.build;
                 int tx = World.toTile(wx - build.block.offset);
                 int ty = World.toTile(wy - build.block.offset);
-                if (Build.validPlace(build.block, build.team, tx, ty, build.rotation, false)) {
-                    b.place(tile, build.rotation);
+                if(Build.validPlace(build.block, build.team, tx, ty, build.rotation, false)){
+                    Tile placedTile = Vars.world.tile(tx, ty);
+                    b.place(placedTile, build.rotation);
 
                     Fx.unitDrop.at(build);
                     build.block.placeEffect.at(tile.drawx(), tile.drawy(), tile.block().size);
