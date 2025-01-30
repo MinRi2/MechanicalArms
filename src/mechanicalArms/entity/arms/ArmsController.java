@@ -4,6 +4,7 @@ import arc.math.*;
 import arc.math.geom.*;
 import arc.struct.*;
 import arc.util.*;
+import arc.util.io.*;
 import mechanicalArms.entity.arms.ArmsCommand.*;
 import mindustry.gen.*;
 
@@ -117,6 +118,18 @@ public class ArmsController{
         if(currentCommand.finished()){
             currentCommand.released = true;
             currentCommand = null;
+        }
+    }
+
+    public void write(Writes writes){
+        for(ArmPart arm : arms){
+            arm.write(writes);
+        }
+    }
+
+    public void read(Reads reads){
+        for(ArmPart arm : arms){
+            arm.read(reads);
         }
     }
 }
