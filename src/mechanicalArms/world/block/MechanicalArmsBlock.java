@@ -71,15 +71,15 @@ public class MechanicalArmsBlock extends Block{
     public void drawPlace(int x, int y, int rotation, boolean valid){
         super.drawPlace(x, y, rotation, valid);
 
-        drawArms(x * Vars.tilesize, y * Vars.tilesize);
-        drawWorkRange(x * Vars.tilesize, y * Vars.tilesize, Vars.player.team().color);
+        drawArms(x * Vars.tilesize + offset, y * Vars.tilesize + offset);
+        drawWorkRange(x * Vars.tilesize + offset, y * Vars.tilesize + offset, Vars.player.team().color);
     }
 
     @Override
     public void drawPlanRegion(BuildPlan plan, Eachable<BuildPlan> list){
         super.drawPlanRegion(plan, list);
 
-        drawArms(plan.x * Vars.tilesize, plan.y * Vars.tilesize);
+        drawArms(plan.x * Vars.tilesize + offset, plan.y * Vars.tilesize + offset);
     }
 
     public class MechanicalArmsBuild extends Building implements ControlBlock{
@@ -87,6 +87,8 @@ public class MechanicalArmsBlock extends Block{
 
         public ArmsController controller = new ArmsController();
         public BlockUnitUnit unit;
+
+        private ArmsCommand lastDumpCommand;
 
         @Override
         public void created(){
@@ -180,7 +182,11 @@ public class MechanicalArmsBlock extends Block{
             if(unit != null && isControlled() && unit.isShooting){
                 if(interval.get(60)){
                     controller.rotateTo(unit.aimX, unit.aimY);
-                    controller.addCommand(new DumpCommand((ArmPicker)controller.worker));
+                }
+
+                if(lastDumpCommand == null || lastDumpCommand.released){
+                    lastDumpCommand = new DumpCommand((ArmPicker)controller.worker);
+                    controller.addCommand(lastDumpCommand);
                 }
             }
 
