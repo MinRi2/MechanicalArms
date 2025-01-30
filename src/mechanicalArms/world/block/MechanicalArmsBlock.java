@@ -11,6 +11,7 @@ import mechanicalArms.entity.arms.ArmsCommand.*;
 import mindustry.*;
 import mindustry.content.*;
 import mindustry.ctype.*;
+import mindustry.entities.units.*;
 import mindustry.gen.*;
 import mindustry.graphics.*;
 import mindustry.logic.*;
@@ -74,6 +75,13 @@ public class MechanicalArmsBlock extends Block{
         drawWorkRange(x * Vars.tilesize, y * Vars.tilesize, Vars.player.team().color);
     }
 
+    @Override
+    public void drawPlanRegion(BuildPlan plan, Eachable<BuildPlan> list){
+        super.drawPlanRegion(plan, list);
+
+        drawArms(plan.x * Vars.tilesize, plan.y * Vars.tilesize);
+    }
+
     public class MechanicalArmsBuild extends Building implements ControlBlock{
         private final Interval interval = new Interval();
 
@@ -85,6 +93,18 @@ public class MechanicalArmsBlock extends Block{
             super.created();
 
             controller.set(this, arms);
+        }
+
+        @Override
+        public boolean acceptItem(Building source, Item item){
+            return controller.worker instanceof ArmPicker picker && picker.canPickupItem(item);
+        }
+
+        @Override
+        public void handleItem(Building source, Item item){
+            if(controller.worker instanceof ArmPicker picker){
+                picker.addItem(item, 1);
+            }
         }
 
         @Override

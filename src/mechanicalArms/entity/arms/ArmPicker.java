@@ -63,13 +63,12 @@ public class ArmPicker extends ArmPart{
 
         if(build == null || !build.block.hasItems || !build.items.has(item)) return;
 
-        int spareAmount = itemCapacity - itemStack.amount;
-        int amount = Math.min(build.items.get(item), spareAmount);
+        int addAmount = addItem(item, build.items.get(item));
 
-        build.items.remove(item, amount);
-        itemStack.set(item, itemStack.amount + amount);
+        build.items.remove(item, addAmount);
+        itemStack.set(item, itemStack.amount + addAmount);
 
-        Fx.itemTransfer.at(wx, wy, amount, item.color, entity);
+        Fx.itemTransfer.at(wx, wy, addAmount, item.color, entity);
     }
 
     public void pickupBuild(float x, float y){
@@ -181,6 +180,17 @@ public class ArmPicker extends ArmPart{
         }
     }
 
+    public int addItem(Item item, int amount){
+        if(canPickupItem(item)){
+            int spareAmount = itemCapacity - itemStack.amount;
+            int addAmount = Math.min(amount, spareAmount);
+
+            itemStack.set(item, itemStack.amount + addAmount);
+            return addAmount;
+        }
+        return 0;
+    }
+
     public boolean canPickupItem(Item item){
         return item != itemStack.item ? itemStack.amount == 0 : itemStack.amount < itemCapacity;
     }
@@ -232,8 +242,6 @@ public class ArmPicker extends ArmPart{
                 int displayAmount = Mathf.round(amount * itemTime);
                 Fonts.outline.draw(displayAmount + "", wx, wy - 5f, Pal.accent, 0.25f * itemTime / Scl.scl(1f), false, Align.center);
             }
-
-            Draw.reset();
         }
 
         if(payload != null){
@@ -251,7 +259,7 @@ public class ArmPicker extends ArmPart{
         Lines.arc(wx, wy, radius, fraction, 90 + rotation);
         Lines.stroke(0.7f, color);
         Lines.arc(wx, wy, radius, fraction, 90 + rotation);
-        Draw.reset();
+        Lines.stroke(1f);
     }
 
     @Override
