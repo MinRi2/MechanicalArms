@@ -1,11 +1,14 @@
 package mechanicalArms.entity.arms;
 
+import arc.*;
 import arc.graphics.g2d.*;
 import arc.math.*;
 import arc.math.geom.*;
 import arc.util.*;
+import arc.util.io.*;
 import mindustry.*;
 import mindustry.gen.*;
+import mindustry.world.*;
 
 /**
  * @author minri2
@@ -14,7 +17,10 @@ import mindustry.gen.*;
 public class ArmPart implements Cloneable{
     private static final Vec2 v1 = new Vec2();
 
-    public float length = 4.5f * Vars.tilesize;
+    // find region.
+
+    public float length = 3.5f * Vars.tilesize;
+
     /** unit: deg per second */
     public float rotateSpeed = 180f / 60;
     /** unit: deg */
@@ -22,6 +28,14 @@ public class ArmPart implements Cloneable{
     /** unit: deg */
     protected float rotateTo = 0;
     public boolean rotating;
+
+    // base ---arm--- joint
+    public String armRegionName = "normal-arm", baseRegionName = "normal-base", jointRegionName = "normal-joint";
+    private TextureRegion baseRegion, armRegion, jointRegion;
+
+    public float armWidth = 0.8f * Vars.tilesize;
+
+    private float lastRotation;
 
     protected Teamc entity;
 
@@ -31,9 +45,17 @@ public class ArmPart implements Cloneable{
     public ArmPart(float length, float rotateSpeed){
         this.length = length;
         this.rotateSpeed = rotateSpeed;
+
+        lastRotation = rotation;
     }
 
-    protected float getWorkRadius(){
+    public void loadRegion(Block block){
+        baseRegion = Core.atlas.find(block.name + "-" + baseRegionName);
+        armRegion = Core.atlas.find(block.name + "-" + armRegionName);
+        jointRegion = jointRegionName != null ? Core.atlas.find(block.name + "-" + jointRegionName) : null;
+    }
+
+    public float getWorkRadius(){
         return length;
     }
 
@@ -53,11 +75,18 @@ public class ArmPart implements Cloneable{
         return v1.trns(rotation, getWorkRadius()).add(x, y);
     }
 
-    public void rotateTo(float rotation){
-        if(Mathf.equal(rotateTo, rotation)) return;
+    public void rotateTo(float to){
+        to = Mathf.mod(to, 360f);
+        if(Mathf.equal(rotateTo, to)) return;
 
-        rotateTo = rotation;
+        lastRotation = rotation;
+
+        rotateTo = to;
         rotating = true;
+    }
+
+    public float rotateProgress(){
+        return rotating ? (rotation - rotateTo) / (rotateTo - lastRotation) : 0;
     }
 
     public void setEntity(Teamc entity){
@@ -69,11 +98,11 @@ public class ArmPart implements Cloneable{
      * @param y previous part joint y
      */
     public void draw(float x, float y){
-        Vec2 v = getJointPoint(x, y);
+        Vec2 v = getJointPoint();
 
-        // draw arm
-        Lines.stroke(1.5f);
-        Lines.line(x, y, v.x, v.y);
+        Draw.rect(armRegion, x + v.x / 2, y + v.y / 2, length, armWidth, rotation);
+        Draw.rect(baseRegion, x, y, armWidth, armWidth, rotation);
+        Draw.rect(jointRegion, x + v.x, y + v.y, armWidth, armWidth, rotation);
 
         Draw.reset();
     }
@@ -85,8 +114,20 @@ public class ArmPart implements Cloneable{
     public void update(float x, float y){
         if(rotating){
             rotation = Angles.moveToward(rotation, rotateTo, Time.delta * rotateSpeed);
-            rotating = !Mathf.equal(rotation, rotateTo);
+            rotating = !Mathf.equal(rotation, rotateTo, 0.001f);
         }
+    }
+
+    public void write(Writes writes){
+        writes.f(rotation);
+        writes.f(rotateTo);
+        writes.bool(rotating);
+    }
+
+    public void read(Reads reads){
+        rotation = reads.f();
+        rotateTo = reads.f();
+        rotating = reads.bool();
     }
 
     @Override

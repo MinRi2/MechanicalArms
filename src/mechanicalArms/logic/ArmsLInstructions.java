@@ -15,56 +15,68 @@ import mindustry.type.*;
  */
 public class ArmsLInstructions{
 
-    public static abstract class ArmsLAsyncInstruction implements LInstruction{
-        protected ArmsCommand command;
+    public static abstract class ArmsLControlInstruction implements LInstruction{
+        public int picker;
+        public boolean wait;
         public int finishedOut;
 
-        public ArmsLAsyncInstruction(int finishedOut){
+        protected ArmsCommand command;
+
+        public ArmsLControlInstruction set(int picker, boolean wait, int finishedOut){
+            this.picker = picker;
+            this.wait = wait;
             this.finishedOut = finishedOut;
+            return this;
         }
 
         @Override
         public final void run(LExecutor exec){
             if(command != null){
                 boolean finished = command.released; // wait for released
-                exec.setbool(finishedOut, finished);
+                if(finishedOut != -1){
+                    exec.setbool(finishedOut, finished);
+                }
 
                 if(finished){
                     command = null;
+                }else if(wait){
+                    exec.counter.numval--;
                 }
                 return;
             }
 
-            runLogicAsync(exec);
+            if(finishedOut != -1){
+                exec.setbool(finishedOut, false);
+            }
 
-            if(command == null){
+            execute(exec);
+
+            if(finishedOut != -1 && command == null){
                 exec.setbool(finishedOut, true);
+            }
+
+            if(wait && command != null){
+                exec.counter.numval--;
             }
         }
 
-        public abstract void runLogicAsync(LExecutor exec);
+        public abstract void execute(LExecutor exec);
+
     }
 
-    public static class PickupInstruction implements LInstruction{
-        public int picker;
+    public static class PickupInstruction extends ArmsLControlInstruction{
         public ArmsPickupType type;
         public int p1;
 
         protected ArmsCommand command;
 
-        public PickupInstruction(int picker, ArmsPickupType type, int p1){
-            this.picker = picker;
+        public PickupInstruction(ArmsPickupType type, int p1){
             this.type = type;
             this.p1 = p1;
         }
 
         @Override
-        public void run(LExecutor exec){
-            if(command != null){
-                if(!command.released) return;
-                command = null;
-            }
-
+        public void execute(LExecutor exec){
             Object obj = exec.obj(picker);
             if(!(obj instanceof MechanicalArmsBuild pickerBuild)) return;
 
@@ -84,20 +96,16 @@ public class ArmsLInstructions{
         }
     }
 
-    public static class RotateInstruction extends ArmsLAsyncInstruction{
-        public int picker;
+    public static class RotateInstruction extends ArmsLControlInstruction{
         public int x, y;
 
-        public RotateInstruction(int finishedOut, int picker, int x, int y){
-            super(finishedOut);
-
-            this.picker = picker;
+        public RotateInstruction(int x, int y){
             this.x = x;
             this.y = y;
         }
 
         @Override
-        public void runLogicAsync(LExecutor exec){
+        public void execute(LExecutor exec){
             if(!(exec.obj(picker) instanceof MechanicalArmsBuild pickerBuild)) return;
 
             float rx = exec.numi(x) * Vars.tilesize;
@@ -107,22 +115,15 @@ public class ArmsLInstructions{
         }
     }
 
-    public static class DumpInstruction implements LInstruction{
+    public static class DumpInstruction extends ArmsLControlInstruction{
         public int picker;
-
-        protected ArmsCommand command;
 
         public DumpInstruction(int picker){
             this.picker = picker;
         }
 
         @Override
-        public void run(LExecutor exec){
-            if(command != null){
-                if(!command.released) return;
-                command = null;
-            }
-
+        public void execute(LExecutor exec){
             Object obj = exec.obj(picker);
             if(!(obj instanceof MechanicalArmsBuild pickerBuild)) return;
 

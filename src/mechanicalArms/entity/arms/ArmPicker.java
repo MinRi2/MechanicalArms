@@ -6,17 +6,18 @@ import arc.math.*;
 import arc.math.geom.*;
 import arc.scene.ui.layout.*;
 import arc.util.*;
+import arc.util.io.*;
 import mindustry.*;
 import mindustry.content.*;
 import mindustry.core.*;
 import mindustry.entities.*;
 import mindustry.gen.*;
 import mindustry.graphics.*;
+import mindustry.io.*;
 import mindustry.type.*;
 import mindustry.ui.*;
 import mindustry.world.*;
 import mindustry.world.blocks.payloads.*;
-import mindustry.world.meta.*;
 
 import static mindustry.Vars.state;
 
@@ -36,7 +37,12 @@ public class ArmPicker extends ArmPart{
 
     public float itemTime = 0;
 
+    // TODO: better picker arm.
+    public Color color = Color.valueOf("#d3dee6");
+    public Color backColor = Color.valueOf("#b0b9c0");
+
     public ArmPicker(){
+        super();
     }
 
     public ArmPicker(float length, float rotateSpeed, float radius, float fraction, int itemCapacity){
@@ -46,12 +52,16 @@ public class ArmPicker extends ArmPart{
         this.itemCapacity = itemCapacity;
     }
 
+    public boolean employed(){
+        return payload != null || itemStack.amount != 0;
+    }
+
     public void pickupItem(float wx, float wy, Item item){
-        if((item != itemStack.item && itemStack.amount != 0) || payload != null) return;
+        if(!canPickupItem(item) || payload != null) return;
 
         Building build = Vars.world.buildWorld(wx, wy);
 
-        if(build == null || !build.items.has(item)) return;
+        if(build == null || !build.block.hasItems || !build.items.has(item)) return;
 
         int spareAmount = itemCapacity - itemStack.amount;
         int amount = Math.min(build.items.get(item), spareAmount);
@@ -171,6 +181,10 @@ public class ArmPicker extends ArmPart{
         }
     }
 
+    public boolean canPickupItem(Item item){
+        return item != itemStack.item ? itemStack.amount == 0 : itemStack.amount < itemCapacity;
+    }
+
     public boolean canPickup(Building building){
         return building.canPickup() && building.hitSize() * building.hitSize() < payloadCapacity;
     }
@@ -185,7 +199,7 @@ public class ArmPicker extends ArmPart{
     }
 
     @Override
-    protected float getWorkRadius(){
+    public float getWorkRadius(){
         return length + radius;
     }
 
@@ -195,10 +209,6 @@ public class ArmPicker extends ArmPart{
 
         Vec2 workPoint = getWorkPoint(x, y);
         float wx = workPoint.x, wy = workPoint.y;
-
-        Lines.stroke(1.5f);
-        Lines.arc(wx, wy, radius, fraction, 90 + rotation);
-        Draw.reset();
 
         Item item = itemStack.item;
         int amount = itemStack.amount;
@@ -236,6 +246,12 @@ public class ArmPicker extends ArmPart{
             Color.clear,
             Tmp.c2.set(entity.team().color).lerp(Color.white, colorTime).a(0.7f));
         }
+
+        Lines.stroke(2f, backColor);
+        Lines.arc(wx, wy, radius, fraction, 90 + rotation);
+        Lines.stroke(0.7f, color);
+        Lines.arc(wx, wy, radius, fraction, 90 + rotation);
+        Draw.reset();
     }
 
     @Override
@@ -248,6 +264,45 @@ public class ArmPicker extends ArmPart{
 
         if(payload != null){
             payload.set(workPoint.x, workPoint.y, rotation);
+        }
+    }
+
+    @Override
+    public void write(Writes writes){
+        super.write(writes);
+
+        boolean hasItem = itemStack.amount != 0;
+        boolean hasPayload = payload != null;
+
+        writes.f(itemTime);
+
+        writes.bool(hasItem);
+        writes.bool(hasPayload);
+
+        if(hasItem){
+            TypeIO.writeItems(writes, itemStack);
+        }
+
+        if(hasPayload){
+            TypeIO.writePayload(writes, payload);
+        }
+    }
+
+    @Override
+    public void read(Reads reads){
+        super.read(reads);
+
+        itemTime = reads.f();
+
+        boolean hasItem = reads.bool();
+        boolean hasPayload = reads.bool();
+
+        if(hasItem){
+            TypeIO.readItems(reads, itemStack);
+        }
+
+        if(hasPayload){
+            payload = TypeIO.readPayload(reads);
         }
     }
 

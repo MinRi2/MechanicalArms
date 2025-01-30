@@ -2,6 +2,7 @@ package mechanicalArms.content;
 
 import mechanicalArms.entity.arms.*;
 import mechanicalArms.world.block.*;
+import mindustry.*;
 import mindustry.content.*;
 import mindustry.type.*;
 import mindustry.world.*;
@@ -17,11 +18,15 @@ public class ArmsBlocks{
         picker = new MechanicalArmsBlock("picker"){{
             arms.addAll(
             new ArmPart(){{
+                length = 4.5f * Vars.tilesize;
                 rotateSpeed = 210f / 60;
             }},
             new ArmPicker(){{
-                rotation = 30;
+                length = 3.5f * Vars.tilesize;
                 rotateSpeed = 190f / 60;
+                rotation = 30;
+
+                armWidth *= 0.8f;
             }}
             );
 

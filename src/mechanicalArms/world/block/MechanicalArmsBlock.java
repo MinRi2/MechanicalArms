@@ -1,11 +1,14 @@
 package mechanicalArms.world.block;
 
+import arc.graphics.*;
 import arc.graphics.g2d.*;
+import arc.math.geom.*;
 import arc.struct.*;
 import arc.util.*;
+import arc.util.io.*;
 import mechanicalArms.entity.arms.*;
 import mechanicalArms.entity.arms.ArmsCommand.*;
-import mechanicalArms.logic.*;
+import mindustry.*;
 import mindustry.content.*;
 import mindustry.ctype.*;
 import mindustry.gen.*;
@@ -15,8 +18,7 @@ import mindustry.type.*;
 import mindustry.world.*;
 import mindustry.world.blocks.*;
 import mindustry.world.blocks.payloads.*;
-
-import java.util.*;
+import mindustry.world.meta.*;
 
 /**
  * @author minri2
@@ -29,10 +31,47 @@ public class MechanicalArmsBlock extends Block{
         super(name);
 
         update = true;
+        solid = true;
         size = 3;
         health = 500;
 
+        group = BlockGroup.transportation;
         buildType = MechanicalArmsBuild::new;
+    }
+
+    @Override
+    public void load(){
+        super.load();
+
+        for(ArmPart arm : arms){
+            arm.loadRegion(this);
+        }
+    }
+
+    private void drawWorkRange(float x, float y, Color color){
+        float radius = arms.sumf(ArmPart::getWorkRadius);
+
+        Fill.light(x, y, Lines.circleVertices(radius), radius,
+        Color.clear, Tmp.c1.set(color).a(0.15f));
+
+        Drawf.dashCircle(x, y, radius, color);
+    }
+
+    private void drawArms(float x, float y){
+        Vec2 drawPos = Tmp.v1.set(x, y);
+
+        for(ArmPart arm : arms){
+            arm.draw(drawPos.x, drawPos.y);
+            drawPos.add(arm.getJointPoint());
+        }
+    }
+
+    @Override
+    public void drawPlace(int x, int y, int rotation, boolean valid){
+        super.drawPlace(x, y, rotation, valid);
+
+        drawArms(x * Vars.tilesize, y * Vars.tilesize);
+        drawWorkRange(x * Vars.tilesize, y * Vars.tilesize, Vars.player.team().color);
     }
 
     public class MechanicalArmsBuild extends Building implements ControlBlock{
@@ -103,9 +142,15 @@ public class MechanicalArmsBlock extends Block{
         public void draw(){
             super.draw();
 
-
-            Draw.z(Layer.power - 0.1f);
+            Draw.z(Layer.power - 1f);
             controller.draw();
+        }
+
+        @Override
+        public void drawSelect(){
+            super.drawSelect();
+
+            drawWorkRange(x, y, team.color);
         }
 
         @Override
@@ -120,6 +165,18 @@ public class MechanicalArmsBlock extends Block{
             }
 
             controller.update();
+        }
+
+        @Override
+        public void write(Writes write){
+            super.write(write);
+            controller.write(write);
+        }
+
+        @Override
+        public void read(Reads read, byte revision){
+            super.read(read, revision);
+            controller.read(read);
         }
     }
 

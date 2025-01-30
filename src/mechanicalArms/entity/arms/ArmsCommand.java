@@ -127,7 +127,7 @@ public abstract class ArmsCommand{
             if(!super.finished()) return false;
 
             for(int i = 0; i < armParts.size; i++){
-                if(!Mathf.equal(armParts.get(i).rotation, destAngles[i])){
+                if(!Mathf.equal(armParts.get(i).rotation, destAngles[i], 0.001f)){
                     return false;
                 }
             }
@@ -185,7 +185,9 @@ public abstract class ArmsCommand{
 
         @Override
         public void update(float x, float y, Teamc entity){
-            picker.dump(x, y);
+            if(picker.employed()){
+                picker.dump(x, y);
+            }
         }
 
         @Override

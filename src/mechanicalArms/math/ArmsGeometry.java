@@ -11,6 +11,11 @@ public class ArmsGeometry{
     private static final Vec2 v1 = new Vec2(), v2 = new Vec2(), v3 = new Vec2();
 
     public static int getCircleInspectedPoints(float x1, float y1, float r1, float x2, float y2, float r2, Vec2 out1, Vec2 out2){
+        if(Mathf.equal(x1, x2) && Mathf.equal(y1, y2)){
+            x1 -= 0.001f;
+            y1 -= 0.001f;
+        }
+
         float dst2 = Mathf.dst2(x1, y1, x2, y2);
         float circleDst2 = (r1 + r2) * (r1 + r2);
         if(dst2 > circleDst2){
