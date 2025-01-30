@@ -122,7 +122,7 @@ public class ArmsLStatements{
                 top.button(b -> {
                     b.label(() -> type.name);
 
-                    b.clicked(() -> showSelect(b, ArmsLControlType.all.toArray(), type, type -> {
+                    b.clicked(() -> showSelect(b, ArmsLControlType.all.toArray(ArmsLControlType.class), type, type -> {
                         this.type = type;
                         rebuildStatementTable();
                     }));
